@@ -17,11 +17,6 @@ class Synapse:
         self.weight = weight
         self.signal = 0.0
 
-    def __eq__(self, other):
-        return (isinstance(other, Synapse)
-                and other._signal_source is self._signal_source
-                and other._signal_index == self._signal_index)
-
     def run(self):
         signal = self._signal_source.get_output_signal(self._signal_index)
 
