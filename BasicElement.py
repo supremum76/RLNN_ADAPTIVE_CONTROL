@@ -30,8 +30,8 @@ class Synapse:
 class Dendrite:
     __slots__ = ['synapses', 'output_signal']
 
-    def __init__(self, synapses=[]):
-        self.synapses = list(synapses)
+    def __init__(self, synapses=None):
+        self.synapses = [] if synapses is None else list(synapses)
         self.output_signal = 0.0
 
     def append_synapses(self, synapses):
@@ -123,6 +123,10 @@ class LQVNeuron:
     def lqv_kernels_reactivation(self, threshold_frequency):
         _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency, threshold_frequency)
 
+    def reset_state(self):
+        for i in range(len(self._output_signal)):
+            self._output_signal[i] = 0.0
+
 
 class DNeuron:
     __slots__ = ['dendrites', '_kernels', '_kernels_usage_frequency', '__vector', '_output_signal', '_h', '_r0', '_r1']
@@ -136,6 +140,9 @@ class DNeuron:
         self._r0 = [0.0 for _ in range(number_of_kernels)]  # expected reward with an output value of 0
         self._r1 = [0.0 for _ in range(number_of_kernels)]  # expected reward with an output value of 1
         self._output_signal = 0
+
+    def get_number_of_outputs(self):
+        return 1
 
     def get_output_signal(self, _dummy=0):
         return self._output_signal
@@ -201,6 +208,9 @@ class DNeuron:
 
     def lqv_kernels_reactivation(self, threshold_frequency):
         _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency, threshold_frequency)
+
+    def reset_state(self):
+        self._output_signal = 0
 
 
 #  ------------------------------------ utilities ---------------------------------------------------
