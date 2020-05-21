@@ -17,18 +17,18 @@ class Sensor(list):
 sensor = Sensor([0.0, 0.0, 0.0, 0.0])
 
 lqv_subnet = randomized_lqv_subnet_builder(
-        sensors=[sensor],
+    sensors=[sensor],
 
-        number_of_neurons=10,
+    number_of_neurons=10,
 
-        min_number_of_synapses=3,
-        max_number_of_synapses=5,
+    min_number_of_synapses=3,
+    max_number_of_synapses=5,
 
-        min_number_of_dendrites=2,
-        max_number_of_dendrites=5,
+    min_number_of_dendrites=2,
+    max_number_of_dendrites=5,
 
-        min_number_of_kernels=2,
-        max_number_of_kernels=5)
+    min_number_of_kernels=2,
+    max_number_of_kernels=5)
 
 err = 0
 n = 10000

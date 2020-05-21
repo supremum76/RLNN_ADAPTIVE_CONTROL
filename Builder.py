@@ -44,14 +44,14 @@ class DSubnetLayer:
 
 
 class DSubnet:
-    __slots__ = ['_layers', 'output_layer']
+    __slots__ = ['layers', 'output_layer']
 
     def __init__(self, layers):
-        self._layers = layers
-        self.output_layer = tuple(layers[len(layers) - 1])
+        self.layers = layers
+        self.output_layer = layers[len(layers) - 1]
 
     def run(self, reward, reset_state=False):
-        for layer in self._layers:
+        for layer in self.layers:
             layer.run(reward, reset_state)
 
 
@@ -123,7 +123,7 @@ def randomized_d_subnet_builder(
 
     layers = []
     for i in range(number_of_layers):
-        layers += _randomized_d_subnet_layer_builder(
+        layers.append(_randomized_d_subnet_layer_builder(
             lqv_subnet.neurons if i == 0 else layers[i - 1].neurons,
 
             number_of_neurons,
@@ -137,7 +137,7 @@ def randomized_d_subnet_builder(
             min_number_of_kernels,
             max_number_of_kernels,
 
-            recurrent_computing)
+            recurrent_computing))
 
     return DSubnet(layers)
 

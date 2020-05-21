@@ -221,6 +221,12 @@ def _vector_normalization(vector):
             vector[i] /= norm
 
 
+# TODO изменить алгоритм реактивации ядра.
+# Реактивируемое ядро заменяется на копию ближайшего к нему ядра с достаточным уровнем активности.
+# Такой выбор призван минимизировать изменение в поведении нейрона просле реактивации.
+#
+# В нейронах реактивацию ядер проводить после каждого обновления kernels_usage_frequency
+# + global variables: lqv_kernels_usage_threshold_frequency, lqv_kernels_usage_frequency_learning_rate
 def _lqv_kernels_reactivation(kernels, kernels_usage_frequency, threshold_frequency):
     max_usage_frequency = 0.0
     copy_kernel_index = 0

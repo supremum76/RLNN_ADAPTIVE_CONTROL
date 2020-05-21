@@ -53,7 +53,7 @@ for i in range(n):
         err += 1
         reward = -1
     else:
-        reward = 1
+        reward = +1
 
     if i >= 100 and i % 100 == 0:
         neuron.lqv_kernels_reactivation(threshold_frequency=0.05)
