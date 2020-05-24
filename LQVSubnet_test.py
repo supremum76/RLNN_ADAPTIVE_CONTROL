@@ -55,11 +55,10 @@ for i in range(n):
         sensor[2] = 0
         sensor[3] = 1
 
-    # TODO результаты экспериментов тестирования эффекта памяти и сходимости в статью
-    lqv_subnet.run(number_of_iterations=50, reset_state=False)
+    lqv_subnet.run(number_of_iterations=40, reset_state=False)
 
     # A trained LQV-neuron must set up a related kernel vector for each class pattern.
-    # The signal value correlates with the distance from the class pattern to the corresponding kernel vector.
+    # The signal value correlate with the distance from the class pattern to the corresponding kernel vector.
     avg_min_signal = 0
     for neuron in lqv_subnet.neurons:
         min_signal = 1.0
@@ -71,9 +70,5 @@ for i in range(n):
 
     if avg_min_signal > 0.2:
         err += 1
-
-    if i >= 100 and i % 100 == 0:
-        for neuron in lqv_subnet.neurons:
-            neuron.lqv_kernels_reactivation(threshold_frequency=0.05)
 
 print("error, % = ", err * 100 / n)

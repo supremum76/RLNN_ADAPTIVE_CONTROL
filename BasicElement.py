@@ -5,7 +5,9 @@ from copy import copy
 synapse_learning_rate = 0.01
 lqv_learning_rate = 0.01
 d_neuron_learning_rate = 0.01
-d_neuron_reinit_prob = 0.01
+lqv_kernels_usage_threshold_frequency = 0.05
+lqv_kernels_usage_frequency_learning_rate = 0.01
+d_neuron_reinit_prob = 0.001
 
 
 class Synapse:
@@ -70,6 +72,9 @@ class _LQVKernel:
     def get_distance(self, vector):
         return math.dist(self._kernel, vector)
 
+    def get_distance_between_kernels(self, kernel):
+        return self.get_distance(kernel._kernel)
+
     def __copy__(self):
         clone = type(self)(dim=0)
         clone._kernel = self._kernel.copy()
@@ -115,13 +120,14 @@ class LQVNeuron:
         self._kernels[nearest_kernel_index].learning(self.__vector)
         for i in range(len(self._kernels)):
             if i != nearest_kernel_index:
-                self._kernels_usage_frequency[i] = self._kernels_usage_frequency[i] * (1.0 - lqv_learning_rate)
+                self._kernels_usage_frequency[i] = \
+                    self._kernels_usage_frequency[i] * (1.0 - lqv_kernels_usage_frequency_learning_rate)
             else:
-                self._kernels_usage_frequency[i] = (self._kernels_usage_frequency[i] * (1.0 - lqv_learning_rate) +
-                                                    lqv_learning_rate)
+                self._kernels_usage_frequency[i] = \
+                    (self._kernels_usage_frequency[i] * (1.0 - lqv_kernels_usage_frequency_learning_rate) +
+                     lqv_kernels_usage_frequency_learning_rate)
 
-    def lqv_kernels_reactivation(self, threshold_frequency):
-        _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency, threshold_frequency)
+        _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency)
 
     def reset_state(self):
         for i in range(len(self._output_signal)):
@@ -174,10 +180,14 @@ class DNeuron:
 
         for i in range(len(self._kernels)):
             if i != nearest_cluster_index:
-                self._kernels_usage_frequency[i] = self._kernels_usage_frequency[i] * (1.0 - lqv_learning_rate)
+                self._kernels_usage_frequency[i] = \
+                    self._kernels_usage_frequency[i] * (1.0 - lqv_kernels_usage_frequency_learning_rate)
             else:
-                self._kernels_usage_frequency[i] = (self._kernels_usage_frequency[i] * (1.0 - lqv_learning_rate) +
-                                                    lqv_learning_rate)
+                self._kernels_usage_frequency[i] = \
+                    (self._kernels_usage_frequency[i] * (1.0 - lqv_kernels_usage_frequency_learning_rate) +
+                     lqv_kernels_usage_frequency_learning_rate)
+
+        _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency)
 
     def __block_f(self, cluster_index, reward, learning_rate=d_neuron_learning_rate, reinit_prob=d_neuron_reinit_prob):
         h = self._h
@@ -206,9 +216,6 @@ class DNeuron:
         else:
             self._output_signal = 1
 
-    def lqv_kernels_reactivation(self, threshold_frequency):
-        _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency, threshold_frequency)
-
     def reset_state(self):
         self._output_signal = 0
 
@@ -221,21 +228,20 @@ def _vector_normalization(vector):
             vector[i] /= norm
 
 
-# TODO изменить алгоритм реактивации ядра.
-# Реактивируемое ядро заменяется на копию ближайшего к нему ядра с достаточным уровнем активности.
-# Такой выбор призван минимизировать изменение в поведении нейрона просле реактивации.
-#
-# В нейронах реактивацию ядер проводить после каждого обновления kernels_usage_frequency
-# + global variables: lqv_kernels_usage_threshold_frequency, lqv_kernels_usage_frequency_learning_rate
-def _lqv_kernels_reactivation(kernels, kernels_usage_frequency, threshold_frequency):
-    max_usage_frequency = 0.0
-    copy_kernel_index = 0
+# The reactivated kernel is replaced with a copy of the nearest core with a sufficient level of activity.
+# This choice is designed to minimize the change in neuron behavior after reactivation.
+def _lqv_kernels_reactivation(kernels, kernels_usage_frequency):
     for i in range(len(kernels)):
-        if max_usage_frequency < kernels_usage_frequency[i]:
-            copy_kernel_index = i
-            max_usage_frequency = kernels_usage_frequency[i]
+        if kernels_usage_frequency[i] < lqv_kernels_usage_threshold_frequency:
+            min_dist = 0.0
+            copy_kernel_index = -1
+            for k in range(len(kernels)):
+                if kernels_usage_frequency[k] > lqv_kernels_usage_threshold_frequency:
+                    dist = kernels[k].get_distance_between_kernels(kernels[i])
+                    if min_dist > dist or copy_kernel_index < 0:
+                        min_dist = dist
+                        copy_kernel_index = k
 
-    for i in range(len(kernels)):
-        if kernels_usage_frequency[i] < threshold_frequency:
-            kernels[i] = copy(kernels[copy_kernel_index])
-            kernels_usage_frequency[i] = kernels_usage_frequency[copy_kernel_index]
+            if copy_kernel_index != -1:
+                kernels[i] = copy(kernels[copy_kernel_index])
+                kernels_usage_frequency[i] = kernels_usage_frequency[copy_kernel_index]

@@ -54,7 +54,7 @@ for i in range(n):
     neuron.run()
 
     # A trained LQV-neuron must set up a related kernel vector for each class pattern.
-    # The signal value correlates with the distance from the class pattern to the corresponding kernel vector.
+    # The signal value correlate with the distance from the class pattern to the corresponding kernel vector.
     min_signal = 1.0
     for k in range(neuron.get_number_of_outputs()):
         min_signal = min(min_signal, neuron.get_output_signal(k))

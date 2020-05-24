@@ -55,7 +55,4 @@ for i in range(n):
     else:
         reward = +1
 
-    if i >= 100 and i % 100 == 0:
-        neuron.lqv_kernels_reactivation(threshold_frequency=0.05)
-
 print("error, % = ", err * 100 / n)

@@ -1,58 +1,7 @@
-import BasicElement
 from random import randint, sample
 
-
-# TODO определение subnet в отдельном модуле
-# TODO отдельный модуль Template для класса SignalSource
-class LQVSubnet:
-    __slots__ = ['_synapses', 'neurons']
-
-    def __init__(self, synapses, neurons):
-        self._synapses = synapses
-        self.neurons = neurons
-
-    def run(self, number_of_iterations=1, reset_state=False):
-        if reset_state:
-            for neuron in self.neurons:
-                neuron.reset_state()
-
-        for _ in range(number_of_iterations + 1):
-            for synapse in self._synapses:
-                synapse.run()
-
-            for neuron in self.neurons:
-                neuron.run()
-
-
-class DSubnetLayer:
-    __slots__ = ['_synapses', 'neurons']
-
-    def __init__(self, synapses, neurons):
-        self._synapses = synapses
-        self.neurons = neurons
-
-    def run(self, reward, reset_state=False):
-        if reset_state:
-            for neuron in self.neurons:
-                neuron.reset_state()
-
-        for synapse in self._synapses:
-            synapse.run()
-
-        for neuron in self.neurons:
-            neuron.run(reward)
-
-
-class DSubnet:
-    __slots__ = ['layers', 'output_layer']
-
-    def __init__(self, layers):
-        self.layers = layers
-        self.output_layer = layers[len(layers) - 1]
-
-    def run(self, reward, reset_state=False):
-        for layer in self.layers:
-            layer.run(reward, reset_state)
+import BasicElement
+import Subnet
 
 
 def _randomized_d_subnet_layer_builder(
@@ -75,8 +24,8 @@ def _randomized_d_subnet_layer_builder(
         for _ in range(n):
             yield randint(a, b)
 
-    # Создаем пул дендритов в достаточном количестве.
-    # Синапсы в дендриты будут добавлены позже.
+    # Creating a pool of dendrites in sufficient quantities.
+    # Synapses in dendrites will be added later.
     dendrites = [BasicElement.Dendrite()
                  for _ in range((min_number_of_dendrites + max_number_of_dendrites) * number_of_neurons // 2)]
 
@@ -89,19 +38,19 @@ def _randomized_d_subnet_layer_builder(
     else:
         _signal_sources = signal_sources
 
-    # создаем полный набор синапсов для каждого возможного сигнала
+    # creating a complete set of synapses for every possible signal source
     synapses = [BasicElement.Synapse(signal_source=signal_source, signal_index=signal_index)
                 for signal_source in _signal_sources for signal_index in range(signal_source.get_number_of_outputs())]
-    # распределяем синапсы по дендритам
+    # synapses distribution for dendrites
     used_synapses = set()
     for dendrite in dendrites:
         subset_synapses = sample(synapses, randint(min_number_of_synapses, max_number_of_synapses))
         dendrite.append_synapses(subset_synapses)
         used_synapses.update(subset_synapses)
-    # оставляем только используемые синапсы
+    # only used synapses remain
     synapses = list(used_synapses)
-    # возвращаем D-subnet layer
-    return DSubnetLayer(synapses, neurons)
+    # create and return D-subnet layer
+    return Subnet.DSubnetLayer(synapses, neurons)
 
 
 def randomized_d_subnet_builder(
@@ -119,8 +68,7 @@ def randomized_d_subnet_builder(
         min_number_of_kernels,
         max_number_of_kernels,
 
-        recurrent_computing=True):
-
+        recurrent_computing):
     layers = []
     for i in range(number_of_layers):
         layers.append(_randomized_d_subnet_layer_builder(
@@ -139,7 +87,7 @@ def randomized_d_subnet_builder(
 
             recurrent_computing))
 
-    return DSubnet(layers)
+    return Subnet.DSubnet(layers)
 
 
 def randomized_lqv_subnet_builder(
@@ -160,8 +108,8 @@ def randomized_lqv_subnet_builder(
         for _ in range(n):
             yield randint(a, b)
 
-    # Создаем пул дендритов в достаточном количестве.
-    # Синапсы в дендриты будут добавлены позже.
+    # Creating a pool of dendrites in sufficient quantities.
+    # Synapses in dendrites will be added later.
     dendrites = [BasicElement.Dendrite()
                  for _ in range((min_number_of_dendrites + max_number_of_dendrites) * number_of_neurons // 2)]
 
@@ -171,16 +119,16 @@ def randomized_lqv_subnet_builder(
 
     signal_sources = sensors + neurons
 
-    # создаем полный набор синапсов для каждого возможного сигнала
+    # creating a complete set of synapses for every possible signal source
     synapses = [BasicElement.Synapse(signal_source=signal_source, signal_index=signal_index)
                 for signal_source in signal_sources for signal_index in range(signal_source.get_number_of_outputs())]
-    # распределяем синапсы по дендритам
+    # synapses distribution for dendrites
     used_synapses = set()
     for dendrite in dendrites:
         subset_synapses = sample(synapses, randint(min_number_of_synapses, max_number_of_synapses))
         dendrite.append_synapses(subset_synapses)
         used_synapses.update(subset_synapses)
-    # оставляем только используемые синапсы
+    # only used synapses remain
     synapses = list(used_synapses)
-    # возвращаем LQV-subnet
-    return LQVSubnet(synapses, neurons)
+    # create and return LQV-subnet
+    return Subnet.LQVSubnet(synapses, neurons)
