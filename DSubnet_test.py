@@ -36,7 +36,7 @@ lqv_subnet = randomized_lqv_subnet_builder(
 d_subnet = randomized_d_subnet_builder(
     lqv_subnet=lqv_subnet,
 
-    number_of_layers=1,
+    number_of_layers=3,
     number_of_neurons=30,
 
     min_number_of_synapses=1,
@@ -72,7 +72,7 @@ for i in range(n):
     sum_weight = 0
     for k in range(len(d_subnet.output_synapses)):
         synapse = d_subnet.output_synapses[k]
-        sum_signal += synapse.signal * synapse.weight
+        sum_signal += synapse.output_signal * synapse.weight
         sum_weight += synapse.weight
 
     output_signal = sum_signal / sum_weight

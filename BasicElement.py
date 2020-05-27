@@ -7,47 +7,47 @@ lqv_learning_rate = 0.01
 d_neuron_learning_rate = 0.01
 lqv_kernels_usage_threshold_frequency = 0.05
 lqv_kernels_usage_frequency_learning_rate = 0.01
-d_neuron_reinit_prob = 0.001
+d_neuron_reassessment_prob = 0.001
 
 
 class Synapse:
-    __slots__ = ['_signal_source', '_signal_index', 'weight', 'signal']
+    __slots__ = ['_signal_source', '_signal_index', 'weight', 'output_signal']
 
     def __init__(self, signal_source, signal_index=0, weight=1.0):
         self._signal_source = signal_source
         self._signal_index = signal_index
         self.weight = weight
-        self.signal = 0.0
+        self.output_signal = 0.0
 
     def run(self):
         signal = self._signal_source.get_output_signal(self._signal_index)
 
         # learning
         self.weight = (self.weight * (1.0 - synapse_learning_rate) +
-                       synapse_learning_rate * abs(self.signal - signal))
+                       synapse_learning_rate * abs(self.output_signal - signal))
 
-        self.signal = signal
+        self.output_signal = signal
 
 
 class Dendrite:
-    __slots__ = ['synapses', 'output_signal']
+    __slots__ = ['_synapses', 'output_signal']
 
     def __init__(self, synapses=None):
-        self.synapses = [] if synapses is None else list(synapses)
+        self._synapses = [] if synapses is None else list(synapses)
         self.output_signal = 0.0
 
     def append_synapses(self, synapses):
-        self.synapses += synapses
+        self._synapses += synapses
 
     def run(self):
-        if len(self.synapses) == 0:
+        if len(self._synapses) == 0:
             self.output_signal = 0.0
             return
 
         s = 0.0
         w = 0.0
-        for syn in self.synapses:
-            s += syn.signal * syn.weight
+        for syn in self._synapses:
+            s += syn.output_signal * syn.weight
             w += syn.weight
 
         if not math.isclose(0.0, w):
@@ -94,8 +94,8 @@ class LQVNeuron:
     def get_number_of_outputs(self):
         return len(self._output_signal)
 
-    def get_output_signal(self, index):
-        return self._output_signal[index]
+    def get_output_signal(self, signal_index):
+        return self._output_signal[signal_index]
 
     def run(self):
         for i in range(len(self.dendrites)):
@@ -189,7 +189,8 @@ class DNeuron:
 
         _lqv_kernels_reactivation(self._kernels, self._kernels_usage_frequency)
 
-    def __block_f(self, cluster_index, reward, learning_rate=d_neuron_learning_rate, reinit_prob=d_neuron_reinit_prob):
+    def __block_f(self, cluster_index, reward, learning_rate=d_neuron_learning_rate,
+                  reassessment_prob=d_neuron_reassessment_prob):
         h = self._h
         r0 = self._r0
         r1 = self._r1
@@ -206,7 +207,7 @@ class DNeuron:
                 r[i] = r[i] * (1.0 - learning_rate) + learning_rate * reward * h[i]  # reinforcement learning
                 h[i] = 0  # clear LQV-clusters activity history
 
-                if random() < reinit_prob:
+                if random() < reassessment_prob:
                     r0[i] = r1[i]
 
         h[cluster_index] += 1
